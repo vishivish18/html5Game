@@ -17,13 +17,16 @@
     function startGame() {
         myGameArea.start();
         console.log(myGameArea)
+        myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+        myGamePiece = new component(20, 20, "blue", 0, 0);
         blueGamePiece = new component(20, 20, "blue", 0, 0);
         redGamePiece = new component(30, 30, "red", 30, 100);
         myObstacle = new component(10, 200, "green", 200, 120);
         anotherObstacle = new component(10, 300, "yellow", 300, 220)
     }
 
-    function component(width, height, color, x, y) {
+    function component(width, height, color, x, y, type) {
+        this.type = type;
         this.width = width;
         this.height = height;
         this.x = x;
@@ -31,8 +34,14 @@
         this.speedX = 0;
         this.speedY = 0;
         ctx = myGameArea.context;
-        ctx.fillStyle = color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.type == "text") {            
+            ctx.font = this.width + " " + this.height;
+            ctx.fillStyle = color;
+            ctx.fillText(this.text, this.x, this.y);
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
         this.update = function() {
             ctx = myGameArea.context;
             ctx.fillStyle = color;
@@ -61,62 +70,98 @@
             return crash;
         }
     }
+    var myGamePiece;
+    var myObstacles = [];
+    var myScore;
+    var colors = ['green', 'yellow', 'black', 'grey']
 
-    function moveup() {
-        blueGamePiece.speedY -= 1;
-    }
+    function calculateRandom(arr) {
+        return Math.floor(Math.random() * arr.length) + 0
 
-    function movedown() {
-        blueGamePiece.speedY += 1;
-    }
-
-    function moveright() {
-        blueGamePiece.speedX += 1;
-    }
-
-    function moveleft() {
-        blueGamePiece.speedX -= 1;
     }
 
     function updateGameArea() {
-        if (blueGamePiece.crashWith(myObstacle) || blueGamePiece.crashWith(anotherObstacle)) {
-            myGameArea.stop();
-        } else {
-            myGameArea.clear();
-            myObstacle.update();
-            anotherObstacle.update();
-            blueGamePiece.newPos();
-            blueGamePiece.update();
+        var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+        for (i = 0; i < myObstacles.length; i += 1) {
+            if (myGamePiece.crashWith(myObstacles[i])) {
+                myGameArea.stop();
+                return;
+            }
         }
-        //blueGamePiece.x += 1;
-        //redGamePiece.x += 2;
-        // blueGamePiece.speedX = 0;
-        // blueGamePiece.speedY = 0;
+        myGameArea.clear();
+        myGameArea.frameNo += 1;
+        if (myGameArea.frameNo == 1 || everyinterval(150)) {
+            x = myGameArea.canvas.width;
+            minHeight = 20;
+            maxHeight = 200;
+            height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+            minGap = 50;
+            maxGap = 200;
+            gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
+            myObstacles.push(new component(10, height, colors[calculateRandom(colors)], x, 0));
+            myObstacles.push(new component(10, x - height - gap, colors[calculateRandom(colors)], x, height + gap));
+        }
+        for (i = 0; i < myObstacles.length; i += 1) {
+            myObstacles[i].x += -1;
+            myObstacles[i].update();
+        }
         if (myGameArea.keys && myGameArea.keys[37]) {
 
-            blueGamePiece.speedX -= 1
+            myGamePiece.speedX -= 1
         }
         if (myGameArea.keys && myGameArea.keys[39]) {
 
-            blueGamePiece.speedX = 1;
+            myGamePiece.speedX = 1;
         }
         if (myGameArea.keys && myGameArea.keys[38]) {
 
-            blueGamePiece.speedY = -1;
+            myGamePiece.speedY = -1;
         }
         if (myGameArea.keys && myGameArea.keys[40]) {
-            blueGamePiece.speedY = 1;
+            myGamePiece.speedY = 1;
         }
-        blueGamePiece.newPos()
-        blueGamePiece.update();
-        myObstacle.update();
-        //redGamePiece.update();
+        myScore.text = "SCORE: " + myGameArea.frameNo;
+        myScore.update();
+        myGamePiece.newPos();
+        myGamePiece.update();
+        console.log(myScore.text)
     }
+
+    // function updateGameArea() {
+    //     if (blueGamePiece.crashWith(myObstacle) || blueGamePiece.crashWith(anotherObstacle)) {
+    //         myGameArea.stop();
+    //     } else {
+    //         myGameArea.clear();
+    //         myObstacle.update();
+    //         anotherObstacle.update();
+    //         blueGamePiece.newPos();
+    //         blueGamePiece.update();
+    //     }
+    //     if (myGameArea.keys && myGameArea.keys[37]) {
+
+    //         blueGamePiece.speedX -= 1
+    //     }
+    //     if (myGameArea.keys && myGameArea.keys[39]) {
+
+    //         blueGamePiece.speedX = 1;
+    //     }
+    //     if (myGameArea.keys && myGameArea.keys[38]) {
+
+    //         blueGamePiece.speedY = -1;
+    //     }
+    //     if (myGameArea.keys && myGameArea.keys[40]) {
+    //         blueGamePiece.speedY = 1;
+    //     }
+    //     blueGamePiece.newPos()
+    //     blueGamePiece.update();
+    //     myObstacle.update();
+    //     //redGamePiece.update();
+    // }
     var myGameArea = {
         canvas: document.createElement("canvas"),
         start: function() {
             this.canvas.height = 520;
-            this.canvas.width = 600;
+            this.canvas.width = 1100;
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
             this.frameNo = 0;
@@ -148,10 +193,6 @@
         return false;
     }
     </script>
-    <button onclick="moveup()">UP</button>
-    <button onclick="movedown()">DOWN</button>
-    <button onclick="moveleft()">LEFT</button>
-    <button onclick="moveright()">RIGHT</button>
 </body>
 
 </html>
